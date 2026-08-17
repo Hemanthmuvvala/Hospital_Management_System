@@ -1,0 +1,80 @@
+<template>
+    <div class="hms-container">
+        <!-- Top App Header Banner -->
+        <header class="hms-header shadow-card">
+            <div class="header-left">
+                <div class="app-logo">🏥</div>
+                <div>
+                    <h1 class="app-title">Hospital Management Portal</h1>
+                    <p class="app-subtitle">Salesforce Enterprise Healthcare Operations & Patient Care</p>
+                </div>
+            </div>
+            <div class="header-right">
+                <span class="live-badge">● System Online</span>
+                <lightning-button label="Refresh Portal" icon-name="utility:refresh" onclick={handleRefreshAll} variant="inverse"></lightning-button>
+            </div>
+        </header>
+
+        <!-- KPI Metrics Grid -->
+        <div class="slds-grid slds-gutters slds-m-vertical_medium kpi-grid">
+            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-4">
+                <div class="kpi-card kpi-patients shadow-card">
+                    <div class="kpi-icon">👥</div>
+                    <div class="kpi-details">
+                        <span class="kpi-label">Active Patients</span>
+                        <span class="kpi-value">{patientStats.active}</span>
+                        <span class="kpi-sub font-small">Total Registry: {patientStats.total}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-4">
+                <div class="kpi-card kpi-doctors shadow-card">
+                    <div class="kpi-icon">🩺</div>
+                    <div class="kpi-details">
+                        <span class="kpi-label">Available Doctors</span>
+                        <span class="kpi-value">{doctorStats.available}</span>
+                        <span class="kpi-sub font-small">On Leave: {doctorStats.onLeave}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-4">
+                <div class="kpi-card kpi-appts shadow-card">
+                    <div class="kpi-icon">📅</div>
+                    <div class="kpi-details">
+                        <span class="kpi-label">Scheduled Visits</span>
+                        <span class="kpi-value">{apptStats.scheduled}</span>
+                        <span class="kpi-sub font-small">Completed: {apptStats.completed}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-4">
+                <div class="kpi-card kpi-billing shadow-card">
+                    <div class="kpi-icon">💳</div>
+                    <div class="kpi-details">
+                        <span class="kpi-label">Unpaid Dues</span>
+                        <span class="kpi-value">${billingStats.totalUnpaid}</span>
+                        <span class="kpi-sub font-small">Collected: ${billingStats.totalPaid}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Tabbed Workspaces -->
+        <div class="shadow-card tab-container">
+            <lightning-tabset variant="scoped">
+                <lightning-tab label="Appointment Booking" icon-name="standard:event">
+                    <c-appointment-booking></c-appointment-booking>
+                </lightning-tab>
+                <lightning-tab label="Patient Registry & Records" icon-name="standard:user">
+                    <c-patient-management></c-patient-management>
+                </lightning-tab>
+                <lightning-tab label="Billing & Payments" icon-name="standard:currency">
+                    <c-billing-console></c-billing-console>
+                </lightning-tab>
+            </lightning-tabset>
+        </div>
+    </div>
+</template>

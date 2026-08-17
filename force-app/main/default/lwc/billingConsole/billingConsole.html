@@ -1,0 +1,89 @@
+<template>
+    <div class="slds-card billing-card shadow-card">
+        <!-- Header -->
+        <div class="slds-card__header slds-grid header-bar">
+            <header class="slds-media slds-media_center slds-has-flexi-truncate">
+                <div class="slds-media__figure">
+                    <span class="slds-icon_container slds-icon-standard-custom-notification icon-box">
+                        <lightning-icon icon-name="standard:currency" alternative-text="Billing Console" size="medium"></lightning-icon>
+                    </span>
+                </div>
+                <div class="slds-media__body">
+                    <h2 class="slds-card__header-title main-title">
+                        <span>Billing & Payment Console</span>
+                    </h2>
+                    <p class="slds-text-body_small sub-title">Track patient invoices, process payments, and collect dues</p>
+                </div>
+            </header>
+            <div class="slds-no-flex">
+                <lightning-button label="Refresh Dues" icon-name="utility:refresh" onclick={handleRefresh} variant="neutral"></lightning-button>
+            </div>
+        </div>
+
+        <div class="slds-card__body slds-card__body_inner">
+            <!-- Filter Controls -->
+            <div class="slds-grid slds-gutters slds-m-bottom_medium slds-wrap align-center">
+                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                    <lightning-input type="search" placeholder="Search by patient name or bill number..." value={searchKey} onchange={handleSearchChange}></lightning-input>
+                </div>
+                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                    <lightning-combobox label="Bill Status" value={statusFilter} options={statusOptions} onchange={handleStatusChange}></lightning-combobox>
+                </div>
+            </div>
+
+            <!-- Bills Datatable -->
+            <template if:true={isLoading}>
+                <div class="spinner-container">
+                    <lightning-spinner alternative-text="Loading bills" size="medium"></lightning-spinner>
+                </div>
+            </template>
+
+            <template if:false={isLoading}>
+                <template if:true={hasBills}>
+                    <div class="table-wrapper">
+                        <table class="slds-table slds-table_cell-buffer slds-table_bordered custom-table">
+                            <thead>
+                                <tr class="slds-line-height_reset">
+                                    <th scope="col"><div class="slds-truncate">Bill Ref #</div></th>
+                                    <th scope="col"><div class="slds-truncate">Patient</div></th>
+                                    <th scope="col"><div class="slds-truncate">Amount</div></th>
+                                    <th scope="col"><div class="slds-truncate">Status</div></th>
+                                    <th scope="col"><div class="slds-truncate">Created Date</div></th>
+                                    <th scope="col"><div class="slds-truncate">Payment Date</div></th>
+                                    <th scope="col"><div class="slds-truncate">Action</div></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template for:each={processedBills} for:item="bill">
+                                    <tr key={bill.Id} class="table-row">
+                                        <td class="bold-text">{bill.billName}</td>
+                                        <td>{bill.patientName}</td>
+                                        <td class="amount-text">${bill.Amount__c}</td>
+                                        <td><span class={bill.statusClass}>{bill.Status__c}</span></td>
+                                        <td>{bill.formattedCreatedDate}</td>
+                                        <td>{bill.formattedPaymentDate}</td>
+                                        <td>
+                                            <template if:true={bill.isUnpaid}>
+                                                <lightning-button label="Pay Now" icon-name="utility:moneybag" variant="success" size="small" data-id={bill.Id} onclick={handlePayNow}></lightning-button>
+                                            </template>
+                                            <template if:false={bill.isUnpaid}>
+                                                <span class="paid-check">✓ Settled</span>
+                                            </template>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </template>
+                <template if:false={hasBills}>
+                    <div class="empty-state">
+                        <lightning-icon icon-name="utility:money" size="large" class="slds-m-bottom_small"></lightning-icon>
+                        <p class="empty-title">No bills found</p>
+                        <p class="empty-desc">No billing invoices match your current search.</p>
+                    </div>
+                </template>
+            </template>
+        </div>
+    </div>
+</template>

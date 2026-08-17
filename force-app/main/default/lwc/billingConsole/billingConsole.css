@@ -1,0 +1,69 @@
+.shadow-card {
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+    border: 1px solid #e5e9f2;
+    background: #ffffff;
+    overflow: hidden;
+}
+
+.header-bar {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #edf2f7;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+}
+
+.main-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.sub-title {
+    color: #64748b;
+}
+
+.custom-table {
+    width: 100%;
+}
+
+.table-row:hover {
+    background-color: #f1f5f9;
+}
+
+.bold-text {
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.amount-text {
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.status-badge {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.78rem;
+    font-weight: 600;
+}
+
+.status-paid {
+    background-color: #dcfce7;
+    color: #15803d;
+}
+
+.status-unpaid {
+    background-color: #fee2e2;
+    color: #b91c1c;
+}
+
+.paid-check {
+    color: #16a34a;
+    font-weight: 600;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #94a3b8;
+}

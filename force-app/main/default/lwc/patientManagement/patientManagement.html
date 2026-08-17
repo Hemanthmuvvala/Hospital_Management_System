@@ -1,0 +1,258 @@
+<template>
+    <div class="slds-card patient-card shadow-card">
+        <!-- Header -->
+        <div class="slds-card__header slds-grid header-bar">
+            <header class="slds-media slds-media_center slds-has-flexi-truncate">
+                <div class="slds-media__figure">
+                    <span class="slds-icon_container slds-icon-standard-user icon-box">
+                        <lightning-icon icon-name="standard:user" alternative-text="Patient Directory" size="medium"></lightning-icon>
+                    </span>
+                </div>
+                <div class="slds-media__body">
+                    <h2 class="slds-card__header-title main-title">
+                        <span>Patient Directory & Medical History</span>
+                    </h2>
+                    <p class="slds-text-body_small sub-title">Manage patient profiles, view medical history & outstanding balances</p>
+                </div>
+            </header>
+            <div class="slds-no-flex">
+                <lightning-button label="Add New Patient" icon-name="utility:add" variant="brand" onclick={openAddPatientModal}></lightning-button>
+            </div>
+        </div>
+
+        <!-- Filter Controls -->
+        <div class="slds-card__body slds-card__body_inner">
+            <div class="slds-grid slds-gutters slds-m-bottom_medium slds-wrap align-center">
+                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                    <lightning-input type="search" placeholder="Search by name, phone, or email..." value={searchKey} onchange={handleSearchChange}></lightning-input>
+                </div>
+                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3">
+                    <lightning-combobox label="Status Filter" value={statusFilter} options={statusOptions} onchange={handleStatusChange}></lightning-combobox>
+                </div>
+                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-6 slds-m-top_large">
+                    <lightning-button label="Refresh" icon-name="utility:refresh" onclick={handleRefresh} variant="neutral" class="full-width-btn"></lightning-button>
+                </div>
+            </div>
+
+            <!-- Patient Datatable -->
+            <template if:true={isLoading}>
+                <div class="spinner-container">
+                    <lightning-spinner alternative-text="Loading" size="medium"></lightning-spinner>
+                </div>
+            </template>
+
+            <template if:false={isLoading}>
+                <template if:true={hasPatients}>
+                    <div class="table-wrapper">
+                        <table class="slds-table slds-table_cell-buffer slds-table_bordered custom-table">
+                            <thead>
+                                <tr class="slds-line-height_reset">
+                                    <th scope="col"><div class="slds-truncate">Patient Name</div></th>
+                                    <th scope="col"><div class="slds-truncate">Blood Group</div></th>
+                                    <th scope="col"><div class="slds-truncate">Gender</div></th>
+                                    <th scope="col"><div class="slds-truncate">Phone</div></th>
+                                    <th scope="col"><div class="slds-truncate">Status</div></th>
+                                    <th scope="col"><div class="slds-truncate">Unpaid Dues</div></th>
+                                    <th scope="col"><div class="slds-truncate">Actions</div></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template for:each={processedPatients} for:item="pat">
+                                    <tr key={pat.Id} class="table-row">
+                                        <td class="bold-text">{pat.Name}</td>
+                                        <td><span class="blood-badge">{pat.Blood_Group__c}</span></td>
+                                        <td>{pat.Gender__c}</td>
+                                        <td>{pat.Phone__c}</td>
+                                        <td><span class={pat.statusClass}>{pat.Patient_Status__c}</span></td>
+                                        <td class={pat.dueClass}>${pat.Unpaid_Balance__c}</td>
+                                        <td>
+                                            <lightning-button label="View History" icon-name="utility:preview" variant="outline-brand" size="small" data-id={pat.Id} onclick={handleViewHistory}></lightning-button>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </template>
+                <template if:false={hasPatients}>
+                    <div class="empty-state">
+                        <lightning-icon icon-name="utility:user" size="large" class="slds-m-bottom_small"></lightning-icon>
+                        <p class="empty-title">No patients found</p>
+                        <p class="empty-desc">Register a new patient or adjust search filters.</p>
+                    </div>
+                </template>
+            </template>
+        </div>
+    </div>
+
+    <!-- Add Patient Modal -->
+    <template if:true={isAddModalOpen}>
+        <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container">
+                <header class="slds-modal__header modal-header">
+                    <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" title="Close" onclick={closeAddModal}>
+                        <lightning-icon icon-name="utility:close" alternative-text="close" variant="inverse" size="small"></lightning-icon>
+                    </button>
+                    <h2 class="slds-modal__title slds-hyphenate">Register New Patient</h2>
+                </header>
+                <div class="slds-modal__content slds-p-around_medium">
+                    <div class="slds-form slds-form_stacked">
+                        <lightning-input label="Full Name" value={newPatient.Name} required onchange={handleInputName}></lightning-input>
+                        <div class="slds-grid slds-gutters slds-m-top_small">
+                            <div class="slds-col slds-size_1-of-2">
+                                <lightning-combobox label="Gender" value={newPatient.Gender__c} options={genderOptions} onchange={handleInputGender}></lightning-combobox>
+                            </div>
+                            <div class="slds-col slds-size_1-of-2">
+                                <lightning-combobox label="Blood Group" value={newPatient.Blood_Group__c} options={bloodOptions} onchange={handleInputBlood}></lightning-combobox>
+                            </div>
+                        </div>
+                        <div class="slds-grid slds-gutters slds-m-top_small">
+                            <div class="slds-col slds-size_1-of-2">
+                                <lightning-input type="date" label="Date of Birth" value={newPatient.Date_of_Birth__c} onchange={handleInputDOB}></lightning-input>
+                            </div>
+                            <div class="slds-col slds-size_1-of-2">
+                                <lightning-combobox label="Patient Status" value={newPatient.Patient_Status__c} options={statusOptions} onchange={handleInputStatus}></lightning-combobox>
+                            </div>
+                        </div>
+                        <div class="slds-grid slds-gutters slds-m-top_small">
+                            <div class="slds-col slds-size_1-of-2">
+                                <lightning-input type="tel" label="Phone" value={newPatient.Phone__c} onchange={handleInputPhone}></lightning-input>
+                            </div>
+                            <div class="slds-col slds-size_1-of-2">
+                                <lightning-input type="email" label="Email" value={newPatient.Email__c} onchange={handleInputEmail}></lightning-input>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <footer class="slds-modal__footer">
+                    <lightning-button label="Cancel" onclick={closeAddModal} class="slds-m-right_x-small"></lightning-button>
+                    <lightning-button label="Save Patient" variant="brand" onclick={handleSavePatient}></lightning-button>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+
+    <!-- Patient Medical History Drawer / Modal -->
+    <template if:true={isHistoryModalOpen}>
+        <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open slds-modal_large">
+            <div class="slds-modal__container">
+                <header class="slds-modal__header modal-header-history">
+                    <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" title="Close" onclick={closeHistoryModal}>
+                        <lightning-icon icon-name="utility:close" alternative-text="close" variant="inverse" size="small"></lightning-icon>
+                    </button>
+                    <h2 class="slds-modal__title slds-hyphenate">Medical History - {selectedPatient.Name}</h2>
+                </header>
+                <div class="slds-modal__content slds-p-around_medium">
+                    <template if:true={isHistoryLoading}>
+                        <lightning-spinner alternative-text="Loading history" size="medium"></lightning-spinner>
+                    </template>
+                    <template if:false={isHistoryLoading}>
+                        <!-- Patient Header Card -->
+                        <div class="patient-summary-box slds-m-bottom_medium">
+                            <div class="slds-grid slds-gutters">
+                                <div class="slds-col slds-size_1-of-4">
+                                    <strong>Status:</strong> {selectedPatient.Patient_Status__c}
+                                </div>
+                                <div class="slds-col slds-size_1-of-4">
+                                    <strong>Blood Group:</strong> {selectedPatient.Blood_Group__c}
+                                </div>
+                                <div class="slds-col slds-size_1-of-4">
+                                    <strong>Phone:</strong> {selectedPatient.Phone__c}
+                                </div>
+                                <div class="slds-col slds-size_1-of-4">
+                                    <strong>Unpaid Dues:</strong> ${selectedPatient.Unpaid_Balance__c}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- History Tabs -->
+                        <lightning-tabset>
+                            <!-- Medical Diagnoses Tab -->
+                            <lightning-tab label="Medical Diagnoses">
+                                <template if:true={patientHistory.medicalRecords.length}>
+                                    <ul class="slds-timeline">
+                                        <template for:each={patientHistory.medicalRecords} for:item="rec">
+                                            <li key={rec.Id} class="slds-m-bottom_small history-card">
+                                                <div class="slds-grid slds-grid_vertical-align-center">
+                                                    <div class="bold-text color-blue">{rec.Diagnosis__c}</div>
+                                                    <div class="slds-col_bump-left slds-text-color_weak">{rec.Record_Date__c}</div>
+                                                </div>
+                                                <div class="slds-m-top_x-small">Doctor: {rec.Doctor__r.Name}</div>
+                                                <div class="slds-m-top_x-small slds-text-color_weak">Treatment: {rec.Treatment_Plan__c}</div>
+                                            </li>
+                                        </template>
+                                    </ul>
+                                </template>
+                                <template if:false={patientHistory.medicalRecords.length}>
+                                    <p class="slds-p-around_medium slds-text-align_center slds-text-color_weak">No medical records on file.</p>
+                                </template>
+                            </lightning-tab>
+
+                            <!-- Prescriptions Tab -->
+                            <lightning-tab label="Prescriptions">
+                                <template if:true={patientHistory.prescriptions.length}>
+                                    <table class="slds-table slds-table_bordered slds-table_cell-buffer">
+                                        <thead>
+                                            <tr>
+                                                <th>Medicine</th>
+                                                <th>Dosage</th>
+                                                <th>Frequency</th>
+                                                <th>Duration</th>
+                                                <th>Doctor</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <template for:each={patientHistory.prescriptions} for:item="rx">
+                                                <tr key={rx.Id}>
+                                                    <td class="bold-text">{rx.Medicine_Name__c}</td>
+                                                    <td>{rx.Dosage__c}</td>
+                                                    <td>{rx.Frequency__c}</td>
+                                                    <td>{rx.Duration__c}</td>
+                                                    <td>{rx.Doctor__r.Name}</td>
+                                                </tr>
+                                            </template>
+                                        </tbody>
+                                    </table>
+                                </template>
+                                <template if:false={patientHistory.prescriptions.length}>
+                                    <p class="slds-p-around_medium slds-text-align_center slds-text-color_weak">No prescriptions found.</p>
+                                </template>
+                            </lightning-tab>
+
+                            <!-- Appointment History Tab -->
+                            <lightning-tab label="Appointments">
+                                <template if:true={patientHistory.appointments.length}>
+                                    <table class="slds-table slds-table_bordered slds-table_cell-buffer">
+                                        <thead>
+                                            <tr>
+                                                <th>Doctor</th>
+                                                <th>Date</th>
+                                                <th>Reason</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <template for:each={patientHistory.appointments} for:item="apt">
+                                                <tr key={apt.Id}>
+                                                    <td>{apt.Doctor__r.Name}</td>
+                                                    <td>{apt.Appointment_Date__c}</td>
+                                                    <td>{apt.Reason_for_Visit__c}</td>
+                                                    <td>{apt.Status__c}</td>
+                                                </tr>
+                                            </template>
+                                        </tbody>
+                                    </table>
+                                </template>
+                            </lightning-tab>
+                        </lightning-tabset>
+                    </template>
+                </div>
+                <footer class="slds-modal__footer">
+                    <lightning-button label="Close" onclick={closeHistoryModal}></lightning-button>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+</template>

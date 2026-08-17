@@ -1,0 +1,124 @@
+<template>
+    <div class="slds-card appointment-card shadow-card">
+        <!-- Header -->
+        <div class="slds-card__header slds-grid header-bar">
+            <header class="slds-media slds-media_center slds-has-flexi-truncate">
+                <div class="slds-media__figure">
+                    <span class="slds-icon_container slds-icon-standard-event icon-box">
+                        <lightning-icon icon-name="standard:event" alternative-text="Book Appointment" size="medium"></lightning-icon>
+                    </span>
+                </div>
+                <div class="slds-media__body">
+                    <h2 class="slds-card__header-title main-title">
+                        <span>Book & Manage Appointments</span>
+                    </h2>
+                    <p class="slds-text-body_small sub-title">Schedule consultations with doctors & track appointment status</p>
+                </div>
+            </header>
+            <div class="slds-no-flex">
+                <lightning-button label="New Appointment" icon-name="utility:add" variant="brand" onclick={openModal} class="pulse-button"></lightning-button>
+            </div>
+        </div>
+
+        <!-- Filter Controls -->
+        <div class="slds-card__body slds-card__body_inner">
+            <div class="slds-grid slds-gutters slds-m-bottom_medium slds-wrap align-center">
+                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                    <lightning-input type="search" placeholder="Search by patient name, doctor, or reason..." value={searchKey} onchange={handleSearchKeyChange}></lightning-input>
+                </div>
+                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3">
+                    <lightning-combobox label="Status Filter" value={statusFilter} options={statusOptions} onchange={handleStatusFilterChange}></lightning-combobox>
+                </div>
+                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-6 slds-m-top_large">
+                    <lightning-button label="Refresh" icon-name="utility:refresh" onclick={handleRefresh} variant="neutral" class="full-width-btn"></lightning-button>
+                </div>
+            </div>
+
+            <!-- Appointments Datatable -->
+            <template if:true={isLoading}>
+                <div class="spinner-container">
+                    <lightning-spinner alternative-text="Loading" size="medium"></lightning-spinner>
+                </div>
+            </template>
+
+            <template if:false={isLoading}>
+                <template if:true={hasAppointments}>
+                    <div class="table-wrapper">
+                        <table class="slds-table slds-table_cell-buffer slds-table_bordered custom-table">
+                            <thead>
+                                <tr class="slds-line-height_reset">
+                                    <th scope="col"><div class="slds-truncate">Patient</div></th>
+                                    <th scope="col"><div class="slds-truncate">Doctor</div></th>
+                                    <th scope="col"><div class="slds-truncate">Specialization</div></th>
+                                    <th scope="col"><div class="slds-truncate">Date & Time</div></th>
+                                    <th scope="col"><div class="slds-truncate">Reason</div></th>
+                                    <th scope="col"><div class="slds-truncate">Status</div></th>
+                                    <th scope="col"><div class="slds-truncate">Actions</div></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template for:each={processedAppointments} for:item="appt">
+                                    <tr key={appt.Id} class="table-row">
+                                        <td class="bold-text">{appt.patientName}</td>
+                                        <td>{appt.doctorName}</td>
+                                        <td><lightning-badge label={appt.specialization} class="spec-badge"></lightning-badge></td>
+                                        <td>{appt.formattedDate}</td>
+                                        <td>{appt.Reason_for_Visit__c}</td>
+                                        <td>
+                                            <span class={appt.statusClass}>{appt.Status__c}</span>
+                                        </td>
+                                        <td>
+                                            <template if:true={appt.isScheduled}>
+                                                <lightning-button-group>
+                                                    <lightning-button label="Complete" variant="success" size="small" data-id={appt.Id} onclick={handleComplete}></lightning-button>
+                                                    <lightning-button label="Cancel" variant="destructive" size="small" data-id={appt.Id} onclick={handleCancel}></lightning-button>
+                                                </lightning-button-group>
+                                            </template>
+                                            <template if:false={appt.isScheduled}>
+                                                <span class="slds-text-color_weak slds-text-body_small">No Action Required</span>
+                                            </template>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </template>
+                <template if:false={hasAppointments}>
+                    <div class="empty-state">
+                        <lightning-icon icon-name="utility:event" size="large" class="slds-m-bottom_small"></lightning-icon>
+                        <p class="empty-title">No appointments found</p>
+                        <p class="empty-desc">Try clearing filters or book a new appointment.</p>
+                    </div>
+                </template>
+            </template>
+        </div>
+    </div>
+
+    <!-- Booking Modal Dialog -->
+    <template if:true={isModalOpen}>
+        <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open slds-modal_medium">
+            <div class="slds-modal__container">
+                <header class="slds-modal__header modal-header">
+                    <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" title="Close" onclick={closeModal}>
+                        <lightning-icon icon-name="utility:close" alternative-text="close" variant="inverse" size="small"></lightning-icon>
+                    </button>
+                    <h2 class="slds-modal__title slds-hyphenate">Schedule New Appointment</h2>
+                </header>
+                <div class="slds-modal__content slds-p-around_medium">
+                    <div class="slds-form slds-form_stacked">
+                        <lightning-combobox label="Select Patient" value={selectedPatientId} options={patientOptions} required onchange={handlePatientChange}></lightning-combobox>
+                        <lightning-combobox label="Select Doctor" value={selectedDoctorId} options={doctorOptions} required onchange={handleDoctorChange} class="slds-m-top_small"></lightning-combobox>
+                        <lightning-input type="datetime" label="Appointment Date & Time" value={selectedDateTime} required onchange={handleDateTimeChange} class="slds-m-top_small"></lightning-input>
+                        <lightning-textarea label="Reason for Visit" value={visitReason} onchange={handleReasonChange} placeholder="Enter patient symptoms or reason..." class="slds-m-top_small"></lightning-textarea>
+                    </div>
+                </div>
+                <footer class="slds-modal__footer">
+                    <lightning-button label="Cancel" onclick={closeModal} class="slds-m-right_x-small"></lightning-button>
+                    <lightning-button label="Book Appointment" variant="brand" onclick={handleSaveAppointment} disabled={isSaving}></lightning-button>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+</template>
